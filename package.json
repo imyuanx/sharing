@@ -46,5 +46,9 @@
     "qrcode-terminal": "^0.12.0",
     "serve-handler": "github:parvardegr/serve-handler#feature/support-url-prefix",
     "yargs": "^17.6.0"
+  },
+  "pkg": {
+    "assets": "bin/**/*",
+    "outputPath": "dist"
   }
 }
