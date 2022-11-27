@@ -58,6 +58,12 @@ Options:
       --help                        Show help                          [boolean]
 ```
 
+## Build as binary
+
+```bash
+npm run build
+```
+
 ## TODO
 - self-signed certificate creation
 - new banner screenshot (also show the --receive functionality)

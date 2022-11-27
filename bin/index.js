@@ -6,6 +6,7 @@ const _path = require("path");
 const yargs = require("yargs");
 const qrcode = require('qrcode-terminal');
 const portfinder = require('portfinder');
+const clipboard = require('clipboardy-cjs');
 
 const app = require('./app');
 const config = require('./config');
@@ -81,9 +82,6 @@ $ sharing /path/to/file-or-directory -U user -P password  # also works with --re
     }
 
     if (options.clipboard) {
-
-        const clipboard = await import('clipboardy');
-        
         const data = clipboard.default.readSync();
         utils.debugLog(`clipboard data:\n ${data}`);
 
