@@ -7,6 +7,7 @@ const yargs = require("yargs");
 const qrcode = require('qrcode-terminal');
 const portfinder = require('portfinder');
 const clipboard = require('clipboardy-cjs');
+const crypto = require('crypto');
 
 const app = require('./app');
 const config = require('./config');
@@ -98,24 +99,25 @@ $ sharing /path/to/file-or-directory -U user -P password  # also works with --re
             fs.writeFileSync(outPath, data);
             path = _path.resolve(outPath);
         }
+        path = [path];
 
+    } else if (options.receive) {
+        path = [options._[0]];
     } else {
-        path = options._[0];
+        path = options._;
     }
 
-    if (!path) {
+    if (!path || path.length <= 0) {
         console.log('Specify directory or file path.');
         process.exit(1);
     }
-    if (!fs.existsSync(path)) {
-        console.log('Directory or file not found.');
-        process.exit(1);
-    }
 
-    if (fs.lstatSync(path).isFile()) {
-        let trailingSlash = (path.lastIndexOf("/") > -1) ? '/' : '\\';
-        fileName = _path.basename(path);
-        path = path.substring(0, path.lastIndexOf(trailingSlash) + 1);
+    for (let i = 0; i < path.length; i++) {
+      const pathItem = path[i];
+      if (!fs.existsSync(pathItem)) {
+          console.log('Directory or file not found.');
+          process.exit(1);
+      }
     }
     
     options.port = options.port? options.port: await portfinder.getPortPromise(config.portfinder);
@@ -124,8 +126,14 @@ $ sharing /path/to/file-or-directory -U user -P password  # also works with --re
     const uploadAddress = options.ip ? `${config.ssl.protocol}://${options.ip}:${options.port}/receive`: `${config.ssl.protocol}://${utils.getNetworkAddress()}:${options.port}/receive`;
 
     const time = new Date().getTime();
-    const file = fileName ? encodeURIComponent(fileName) : '';
-    const urlInfo = `:${options.port}/share/${file}?time=${time}`;
+    let urlInfo = `:${options.port}/share?time=${time}`;
+    if (options.clipboard) {
+      const filePath = path[0];
+      const fileName = encodeURIComponent(_path.basename(filePath));
+      const dirName = _path.dirname(filePath);
+      const route =  crypto.createHash('md5').update(dirName).digest('hex');
+      urlInfo = `:${options.port}/folder/${route}/${fileName}`;
+    }
     const shareAddress = options.ip ? `${config.ssl.protocol}://${options.ip}${urlInfo}`: `${config.ssl.protocol}://${utils.getNetworkAddress()}${urlInfo}`;    
 
     const onStart = () => {
@@ -139,7 +147,7 @@ $ sharing /path/to/file-or-directory -U user -P password  # also works with --re
         // Handle share
         if (options.clipboard)
             usageMessage = 'Scan the QR-Code to access your Clipboard'
-        else usageMessage = fileName? `Scan the QR-Code to access '${fileName}' file on your phone`: `Scan the QR-Code to access '${path}' directory on your phone`;
+        else usageMessage = `Scan the QR-Code to access '${path.join(' and ')}' directory on your phone`;
 
         console.log(usageMessage);
         qrcode.generate(shareAddress, config.qrcode);
