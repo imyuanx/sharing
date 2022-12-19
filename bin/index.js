@@ -161,6 +161,7 @@ $ sharing /path/to/file-or-directory -U user -P password  # also works with --re
         port: options.port,
         path,
         receive: options.receive,
+        clipboard: options.clipboard,
         onStart,
         postUploadRedirectUrl: uploadAddress,
         shareAddress

@@ -9,7 +9,7 @@ const crypto = require('crypto');
 const config = require('./config');
 const utils = require('./utils');
 
-const start = ({ port, path, receive, onStart, postUploadRedirectUrl, shareAddress }) => {
+const start = ({ port, path, receive, clipboard, onStart, postUploadRedirectUrl, shareAddress }) => {
     const app = express();
 
     // Basic Auth
@@ -20,6 +20,19 @@ const start = ({ port, path, receive, onStart, postUploadRedirectUrl, shareAddre
             users: { [config.auth.username]: config.auth.password }
         }));
     }
+
+    app.get('/', (req, res) => {
+        if (receive) {
+            res.redirect('/receive');
+        } else if (clipboard) {
+            const clipboardPath = _path.dirname(path[0]);
+            const hash = crypto.createHash('md5').update(clipboardPath).digest('hex');
+            const route = `/folder/${hash}/.clipboard-tmp`;
+            res.redirect(route);
+        } else {
+            res.redirect(`/share?time=${new Date().getTime()}`);
+        }
+    });
 
     // Routing
     if (receive) {
