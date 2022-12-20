@@ -8,6 +8,7 @@ const qrcode = require('qrcode-terminal');
 const portfinder = require('portfinder');
 const clipboard = require('clipboardy-cjs');
 const crypto = require('crypto');
+const ngrok = require('ngrok');
 
 const app = require('./app');
 const config = require('./config');
@@ -29,6 +30,22 @@ $ sharing /destination/directory --receive;
 • Share file with Basic Authentication
 $ sharing /path/to/file-or-directory -U user -P password  # also works with --receive`;
 
+function useNgrok(authtoken, port) {
+    return new Promise((reslove, reject) => {
+        ngrok
+          .authtoken(
+              authtoken
+          )
+          .then((res) => {
+              ngrok.connect(port).then((res) => {
+                  reslove(res);
+              }, (err) => {
+                  console.log("ngrok error:", err);
+                  reject(err);
+              });
+          });
+    });
+}
 
 // Main
 (async () => {
@@ -37,6 +54,7 @@ $ sharing /path/to/file-or-directory -U user -P password  # also works with --re
         .option("debug", { describe: "enable debuging logs", demandOption: false })
         .option("p", { alias: 'port', describe: "Change default port", demandOption: false })
         .option("ip", { describe: "Your machine public ip address", demandOption: false })
+        .option("n", { alias: 'ngrok', describe: "Your ngrok Authtoken", demandOption: false })
         .option("c", { alias: 'clipboard', describe: "Share Clipboard", demandOption: false })
         .option("t", { alias: 'tmpdir', describe: "Clipboard Temporary files directory", demandOption: false })
         .option("w", { alias: 'on-windows-native-terminal', describe: "Enable QR-Code support for windows native terminal", demandOption: false })
@@ -121,20 +139,32 @@ $ sharing /path/to/file-or-directory -U user -P password  # also works with --re
     }
     
     options.port = options.port? options.port: await portfinder.getPortPromise(config.portfinder);
+    let ngrokUrl = '';
+    if (options.ngrok) {
+      ngrokUrl = await useNgrok(options.ngrok, options.port);
+    }
+
+    let uploadAddress = options.ip ? `${config.ssl.protocol}://${options.ip}:${options.port}/receive`: `${config.ssl.protocol}://${utils.getNetworkAddress()}:${options.port}/receive`;
 
 
-    const uploadAddress = options.ip ? `${config.ssl.protocol}://${options.ip}:${options.port}/receive`: `${config.ssl.protocol}://${utils.getNetworkAddress()}:${options.port}/receive`;
+    if (options.ngrok) {
+      uploadAddress = `${ngrokUrl}/receive`;
+    }
 
     const time = new Date().getTime();
-    let urlInfo = `:${options.port}/share?time=${time}`;
+    let urlInfo = options.ngrok ? `/share?time=${time}` : `:${options.port}/share?time=${time}`;
     if (options.clipboard) {
       const filePath = path[0];
       const fileName = encodeURIComponent(_path.basename(filePath));
       const dirName = _path.dirname(filePath);
       const route =  crypto.createHash('md5').update(dirName).digest('hex');
-      urlInfo = `:${options.port}/folder/${route}/${fileName}`;
+      urlInfo = options.ngrok ? `/folder/${route}/${fileName}` : `:${options.port}/folder/${route}/${fileName}`;
     }
-    const shareAddress = options.ip ? `${config.ssl.protocol}://${options.ip}${urlInfo}`: `${config.ssl.protocol}://${utils.getNetworkAddress()}${urlInfo}`;    
+    let shareAddress = options.ip ? `${config.ssl.protocol}://${options.ip}${urlInfo}`: `${config.ssl.protocol}://${utils.getNetworkAddress()}${urlInfo}`;
+
+    if (options.ngrok) {
+      shareAddress = `${ngrokUrl}${urlInfo}`;
+    }
 
     const onStart = () => {
         // Handle receive

@@ -47,6 +47,7 @@ Options:
       --debug                       enable debuging logs
   -p, --port                        Change default port
       --ip                          Your machine public ip address
+  -n, --ngrok                       Your ngrok Authtoken
   -c, --clipboard                   Share Clipboard
   -t, --tmpdir                      Clipboard temporary files out directory
   -w, --on-windows-native-terminal  Enable QR-Code support for windows native
