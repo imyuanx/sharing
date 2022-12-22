@@ -54,6 +54,7 @@ Options:
                                     terminal
   -r, --receive                     Receive files
   -q, --receive-port                change receive default port
+  -d, --dev                         Development mode
   -U, --username                    set basic authentication username
                                                                [default: "user"]
   -P, --password                    set basic authentication password
