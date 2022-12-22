@@ -49,7 +49,10 @@
     "yargs": "^17.6.0"
   },
   "pkg": {
-    "assets": "bin/**/*",
+    "assets": [
+      "bin/**/*",
+      "node_modules/ngrok/**"
+    ],
     "outputPath": "dist"
   }
 }

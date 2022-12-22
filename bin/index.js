@@ -59,6 +59,7 @@ function useNgrok(authtoken, port) {
         .option("t", { alias: 'tmpdir', describe: "Clipboard Temporary files directory", demandOption: false })
         .option("w", { alias: 'on-windows-native-terminal', describe: "Enable QR-Code support for windows native terminal", demandOption: false })
         .option("r", { alias: 'receive', describe: "Receive files", demandOption: false })
+        .option("d", { alias: 'dev', describe: "Development mode", demandOption: false })
         .option("U", { default: 'user', alias: 'username', describe: "set basic authentication username", demandOption: false })
         .option("P", { alias: 'password', describe: "set basic authentication password", demandOption: false })
         .option("S", { alias: 'ssl', describe: "Enabel https", demandOption: false })
@@ -82,12 +83,12 @@ function useNgrok(authtoken, port) {
 
     if (options.ssl) {
         if (!options.cert) {
-            console.log('Specify the cert path.');
+            print({ success: false, code: 101, msg: 'Specify the cert path.' });
             return;
         }
         
         if (!options.key) {
-            console.log('Specify the key path.');
+            print({ success: false, code: 102, msg: 'Specify the key path.' });
             return;
         }
 
@@ -126,14 +127,14 @@ function useNgrok(authtoken, port) {
     }
 
     if (!path || path.length <= 0) {
-        console.log('Specify directory or file path.');
+        print({ success: false, code: 103, msg: 'Specify directory or file path.' });
         process.exit(1);
     }
 
     for (let i = 0; i < path.length; i++) {
       const pathItem = path[i];
       if (!fs.existsSync(pathItem)) {
-          console.log('Directory or file not found.');
+          print({ success: false, code: 104, msg: 'Directory or file not found.' });
           process.exit(1);
       }
     }
@@ -144,23 +145,39 @@ function useNgrok(authtoken, port) {
       ngrokUrl = await useNgrok(options.ngrok, options.port);
     }
 
-    let uploadAddress = options.ip ? `${config.ssl.protocol}://${options.ip}:${options.port}/receive`: `${config.ssl.protocol}://${utils.getNetworkAddress()}:${options.port}/receive`;
+    const uploadAddressInfo = {
+      protocol: config.ssl.protocol,
+      host: options.ip || utils.getNetworkAddress(),
+      port: options.port,
+      path: "/receive",
+    };
 
+    let uploadAddress = `${uploadAddressInfo.protocol}://${uploadAddressInfo.host}:${options.port}/receive`;
 
     if (options.ngrok) {
       uploadAddress = `${ngrokUrl}/receive`;
     }
 
     const time = new Date().getTime();
-    let urlInfo = options.ngrok ? `/share?time=${time}` : `:${options.port}/share?time=${time}`;
+    let urlInfoPath = `/share?time=${time}`;
+    let urlInfo = options.ngrok ? urlInfoPath : `:${options.port}${urlInfoPath}`;
     if (options.clipboard) {
       const filePath = path[0];
       const fileName = encodeURIComponent(_path.basename(filePath));
       const dirName = _path.dirname(filePath);
       const route =  crypto.createHash('md5').update(dirName).digest('hex');
-      urlInfo = options.ngrok ? `/folder/${route}/${fileName}` : `:${options.port}/folder/${route}/${fileName}`;
+      urlInfoPath = `/folder/${route}/${fileName}`;
+      urlInfo = options.ngrok ? urlInfoPath : `:${options.port}${urlInfoPath}`;
     }
-    let shareAddress = options.ip ? `${config.ssl.protocol}://${options.ip}${urlInfo}`: `${config.ssl.protocol}://${utils.getNetworkAddress()}${urlInfo}`;
+
+    const shareAddressInfo = {
+      protocol: config.ssl.protocol,
+      host: options.ip || utils.getNetworkAddress(),
+      port: options.port,
+      path: urlInfoPath,
+    };
+
+    let shareAddress = `${shareAddressInfo.protocol}://${shareAddressInfo.host}${urlInfo}`;
 
     if (options.ngrok) {
       shareAddress = `${ngrokUrl}${urlInfo}`;
@@ -169,22 +186,23 @@ function useNgrok(authtoken, port) {
     const onStart = () => {
         // Handle receive
         if (options.receive) {
-            console.log('\nScan the QR-Code to upload your file');
-            qrcode.generate(uploadAddress, config.qrcode);
-            console.log(`access link: ${uploadAddress}\n`);
+            !options.dev && console.log('\nScan the QR-Code to upload your file');
+            !options.dev && qrcode.generate(uploadAddress, config.qrcode);
+            print({ success: true, data: { link: uploadAddressInfo }, msg: `access link: ${uploadAddress}\n` });
+        } else {
+            // Handle share
+            if (options.clipboard) {
+              usageMessage = 'Scan the QR-Code to access your Clipboard'
+            } else {
+              usageMessage = `Scan the QR-Code to access '${path.join(' and ')}' directory on your phone`;
+            }
+            !options.dev && console.log(usageMessage);
+            !options.dev && qrcode.generate(shareAddress, config.qrcode);
+            print({ success: true, data: { link: shareAddressInfo }, msg: `access link: ${shareAddress}` });
         }
 
-        // Handle share
-        if (options.clipboard)
-            usageMessage = 'Scan the QR-Code to access your Clipboard'
-        else usageMessage = `Scan the QR-Code to access '${path.join(' and ')}' directory on your phone`;
-
-        console.log(usageMessage);
-        qrcode.generate(shareAddress, config.qrcode);
-        console.log(`access link: ${shareAddress}`);
-
         // How to exit
-        console.log('\nPress ctrl+c to stop sharing\n');
+        !options.dev && console.log('\nPress ctrl+c to stop sharing\n');
     }
 
     app.start({ 
@@ -196,5 +214,11 @@ function useNgrok(authtoken, port) {
         postUploadRedirectUrl: uploadAddress,
         shareAddress
     });
-
+    /**
+     * @desc Unified printing method
+     * @param {Object} arg 
+    */
+    function print(arg) {
+      console.log(options.dev ? JSON.stringify(arg): arg.msg);
+    }
 })();
