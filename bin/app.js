@@ -60,7 +60,7 @@ const start = ({ port, path, receive, clipboard, onStart, postUploadRedirectUrl,
                     return res.status(500).send(err);
                 }
 
-                console.log(`File recevied: ${uploadPath}`)
+                console.log({ success: true, type: 'UPLOAD', data: { name: _path.basename(uploadPath), uploadPath: uploadPath }, msg: `File recevied: ${uploadPath}` });
 
                 res.send(`
                     <script>
@@ -94,6 +94,9 @@ const start = ({ port, path, receive, clipboard, onStart, postUploadRedirectUrl,
         const hash =  crypto.createHash('md5').update(pathItem).digest('hex');
         const route = `/folder/${hash}`;
         app.use(route, (req, res) => {
+            if (req.path!== '/') {
+                console.log({ success: true, type: 'DOWNLOAD', data: { name: _path.basename(req.path), path: req.path }, msg: `Download: ${req.path}` });
+            }
             handler(req, res, { public: pathItem, etag: true, prefix: route });
         });
     });

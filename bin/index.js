@@ -68,6 +68,9 @@ function useNgrok(authtoken, port) {
         .help(true)
         .argv;
 
+    options.debug = true;
+    // options.receive = true;
+
     config.debug = options.debug || config.debug;
 
     // seems windows os can't support small option on native terminal, refer to https://github.com/gtanner/qrcode-terminal/pull/14/files
