@@ -191,7 +191,7 @@ function useNgrok(authtoken, port) {
         if (options.receive) {
             !options.dev && console.log('\nScan the QR-Code to upload your file');
             !options.dev && qrcode.generate(uploadAddress, config.qrcode);
-            print({ success: true, data: { link: uploadAddressInfo }, msg: `access link: ${uploadAddress}\n` });
+            print({ success: true, type: 'START', data: { link: uploadAddressInfo }, msg: `access link: ${uploadAddress}\n` });
         } else {
             // Handle share
             if (options.clipboard) {
@@ -201,7 +201,7 @@ function useNgrok(authtoken, port) {
             }
             !options.dev && console.log(usageMessage);
             !options.dev && qrcode.generate(shareAddress, config.qrcode);
-            print({ success: true, data: { link: shareAddressInfo }, msg: `access link: ${shareAddress}` });
+            print({ success: true, type: 'START', data: { link: shareAddressInfo }, msg: `access link: ${shareAddress}` });
         }
 
         // How to exit
