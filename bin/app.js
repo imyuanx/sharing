@@ -9,7 +9,7 @@ const crypto = require('crypto');
 const config = require('./config');
 const utils = require('./utils');
 
-const start = ({ port, path, receive, clipboard, onStart, postUploadRedirectUrl, shareAddress }) => {
+const start = ({ port, path, receive, clipboard, updateClipboardData, onStart, postUploadRedirectUrl, shareAddress }) => {
     const app = express();
 
     // Basic Auth
@@ -94,6 +94,10 @@ const start = ({ port, path, receive, clipboard, onStart, postUploadRedirectUrl,
         const hash =  crypto.createHash('md5').update(pathItem).digest('hex');
         const route = `/folder/${hash}`;
         app.use(route, (req, res) => {
+            if (clipboard) {
+              console.log("Update clipboard file");
+              updateClipboardData();
+            }
             if (req.path!== '/') {
                 console.log({ success: true, type: 'DOWNLOAD', data: { name: _path.basename(req.path), path: req.path }, msg: `Download: ${req.path}` });
             }

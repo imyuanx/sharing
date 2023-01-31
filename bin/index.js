@@ -69,7 +69,7 @@ function useNgrok(authtoken, port) {
         .argv;
 
     options.debug = true;
-    // options.receive = true;
+    // options.clipboard = true;
 
     config.debug = options.debug || config.debug;
 
@@ -105,7 +105,7 @@ function useNgrok(authtoken, port) {
         };
     }
 
-    if (options.clipboard) {
+    const updateClipboardData = () => {
         const data = clipboard.default.readSync();
         utils.debugLog(`clipboard data:\n ${data}`);
 
@@ -122,7 +122,9 @@ function useNgrok(authtoken, port) {
             path = _path.resolve(outPath);
         }
         path = [path];
-
+    }
+    if (options.clipboard) {
+        updateClipboardData();
     } else if (options.receive) {
         path = [options._[0]];
     } else {
@@ -213,6 +215,7 @@ function useNgrok(authtoken, port) {
         path,
         receive: options.receive,
         clipboard: options.clipboard,
+        updateClipboardData,
         onStart,
         postUploadRedirectUrl: uploadAddress,
         shareAddress
