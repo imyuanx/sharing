@@ -68,7 +68,7 @@ function useNgrok(authtoken, port) {
         .help(true)
         .argv;
 
-    options.debug = true;
+    // options.debug = true;
     // options.clipboard = true;
 
     config.debug = options.debug || config.debug;
