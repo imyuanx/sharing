@@ -94,7 +94,10 @@ const start = ({ port, path, receive, clipboard, updateClipboardData, onStart, p
         const hash =  crypto.createHash('md5').update(pathItem).digest('hex');
         const route = `/folder/${hash}`;
         app.use(route, (req, res) => {
-            if (clipboard) updateClipboardData();
+            if (clipboard) {
+              updateClipboardData();
+              res.setHeader('Content-Type', 'text/plain; charset=utf-8');
+            }
             if (req.path!== '/') {
                 console.log({ success: true, type: 'DOWNLOAD', data: { name: _path.basename(req.path), path: req.path }, msg: `Download: ${req.path}` });
             }
