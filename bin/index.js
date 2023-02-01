@@ -68,8 +68,8 @@ function useNgrok(authtoken, port) {
         .help(true)
         .argv;
 
-    // options.debug = true;
-    // options.clipboard = true;
+    options.debug = true;
+    options.clipboard = true;
 
     config.debug = options.debug || config.debug;
 
@@ -109,8 +109,11 @@ function useNgrok(authtoken, port) {
         const data = clipboard.default.readSync();
         utils.debugLog(`clipboard data:\n ${data}`);
 
-        let filePath = data.substring(data.indexOf('file://') + 'file://'.length).trim();
-        filePath = decodeURI(filePath);
+        let filePath = data;
+        if (data.indexOf('file://') !== -1) {
+          filePath = data.substring(data.indexOf('file://') + 'file://'.length).trim();
+          try { filePath = decodeURI(filePath); } catch (err) {}
+        }
         utils.debugLog(`clipboard file path:\n ${filePath}`);
 
         if (fs.existsSync(filePath)) {
